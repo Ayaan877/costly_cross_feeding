@@ -29,11 +29,11 @@ Returns:
 '''
 
 # Load stoichiometric matrix
-stoich_matrix_df = pd.read_csv("map01100_stoich_matrix.csv", index_col=0)
+stoich_matrix_df = pd.read_csv("map01100_stoich_matrix.csv", index_col=0).T
 stoich_matrix = stoich_matrix_df.values
 
-metabolites = stoich_matrix_df.index.tolist()
-reactions = stoich_matrix_df.columns.tolist()
+metabolites = stoich_matrix_df.columns.tolist()
+reactions = stoich_matrix_df.index.tolist()
 
 # Metabolite dictionaries
 met_map = kegg_to_id = {met_id: idx for idx, met_id in enumerate(metabolites)}
