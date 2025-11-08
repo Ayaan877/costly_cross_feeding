@@ -20,10 +20,10 @@ Returns:
     Energy: list of internal indices for nutrient metabolites
     Core: list of internal indices for core metabolites
 
-    rho: reactant stoichiometric matrix (negative entries of stoich_matrix, others set to 0)
-    pi: product stoichiometric matrix (positive entries of stoich_matrix, others set to 0)
-    rxnMat: binary reactant matrix (1 if metabolite is a reactant in reaction, else 0)
-    prodMat: binary product matrix (1 if metabolite is a product in reaction, else 0)
+    rho: reactant stoichiometric matrix (negative entries, others set to 0)
+    pi: product stoichiometric matrix (positive entries, others set to 0)
+    rxnMat: binary reactant matrix (1 if metabolite is a reactant, else 0)
+    prodMat: binary product matrix (1 if metabolite is a product, else 0)
     sumRxnVec: vector of counts of reactants per reaction
     sumProdVec: vector of counts of products per reaction
 '''
@@ -52,13 +52,13 @@ with open(f"inv_rxn_map.pkl", "wb") as f:
     pickle.dump(inv_rxn_map, f)
 
 # Currency and nutrient metabolites
-indices_of_currency_mets = pd.read_csv("kegg_currency.txt", header=None)[0].tolist()
-indices_of_energy_mets = pd.read_csv("kegg_nutrients.txt", header=None)[0].tolist()
-indices_of_core_mets = pd.read_csv("kegg_core.txt", header=None)[0].tolist()
+currency_mets_idx = pd.read_csv("kegg_currency.txt", header=None)[0].tolist()
+energy_mets_idx = pd.read_csv("kegg_nutrients.txt", header=None)[0].tolist()
+core_mets_idx = pd.read_csv("kegg_core.txt", header=None)[0].tolist()
 
-Currency = [met_map[i] for i in indices_of_currency_mets if i in met_map]
-Energy = [met_map[i] for i in indices_of_energy_mets if i in met_map]
-Core = [met_map[i] for i in indices_of_core_mets if i in met_map]
+Currency = [met_map[i] for i in currency_mets_idx if i in met_map]
+Energy = [met_map[i] for i in energy_mets_idx if i in met_map]
+Core = [met_map[i] for i in core_mets_idx if i in met_map]
 
 # Compound names dictionary
 mets = list(met_map.values())

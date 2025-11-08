@@ -1,5 +1,5 @@
 import numpy as np
-from sat_marker import markSatMetsRxns
+from satisfiability_check import markSatMetsRxns
 
 def giveRevScope(rxnMat, prodMat, sumRxnVec, nutrientSet, Currency, coreTBP):
     """
