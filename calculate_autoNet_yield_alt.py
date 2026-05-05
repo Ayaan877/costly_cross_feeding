@@ -2,10 +2,6 @@ import numpy as np
 from copy import deepcopy
 
 
-# ---------------------------------------------------------------------------
-# Helper functions (identical to split_by_demand.py)
-# ---------------------------------------------------------------------------
-
 def isLimiting(tRct, tRxn, m, S, reactants):
     for oRct in reactants:
         if (m[tRct] * S[tRxn, oRct] / S[tRxn, tRct]) > m[oRct]:
@@ -16,18 +12,15 @@ def giveLimitingCurrency(r, tRxn):
     return np.where(r[tRxn] == max(r[tRxn][np.where(r[tRxn] < 0.0)]))[0][0]
 
 
-# ---------------------------------------------------------------------------
-# Core algorithm: split_by_demand.py logic
-# ---------------------------------------------------------------------------
-
 def splitByDemand_alt(stoich_matrix, rxnMat, prodMat, sumRxnVec, rho, pi,
                       nutrientSet, Energy, Currency, Core, orgRxns):
     """
     Key behavioural differences vs calculate_autoNet_yield.py:
-      - Picks the first NON-limiting reactant (sbd.py: not isLimiting)
-      - No nutrient-share persistence across rounds
-      - No sumRxnVec == 0 filtering on procRxnVec
-      - Returns (-1.0, -1.0, False) for non-viable networks
+      - Picks the first NON-limiting reactant (false limiting condition)
+      - No nutrient-share persistence across rounds (violates mass conservation)
+      - No sumRxnVec == 0 filtering on procRxnVec (fails to filter invalid rxns)
+      - Viable if any Core is produced (false viability condition)
+      - Returns (-1.0, -1.0, False) for non-viable networks (returns float for non-viable nets)
     """
     runningE, runningB = 0.0, 0.0
 

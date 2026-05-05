@@ -1,7 +1,5 @@
 '''
-MINPATHS AUTONOMOUS NETWORK CONSTRUCTION TEST
-Loads a MinPaths dataset, takes one pathway per target, and builds a
-single autonomous network as a quick sanity check.
+Builds a test minimal autonomous network from a set of minimal pathways
 '''
 from load_networks import load_minpaths
 from combine_pathways import buildAutonomousNetwork
@@ -15,7 +13,7 @@ if __name__ == "__main__":
 
     start = time.time()
     MinNet = buildAutonomousNetwork(paths, rxnMat, prodMat, sumRxnVec,
-                                    nutrientSet, Currency, Core, prune=True, verbose=True)
+                                    nutrientSet, Currency, Core, prune=True)
     print(f"Time taken: {(time.time() - start)} seconds")
 
     with open('autoNet_test.pkl', "wb") as f:

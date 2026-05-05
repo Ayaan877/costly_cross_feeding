@@ -7,6 +7,13 @@ import pickle
 import os
 from directory_paths import resolve_crossnet_path, resolve_yield_path
 
+'''
+Calculates energy and biomass yields for a set of cross-feeding networks using the
+original splitByDemand_alt method (greedy flux allocation, false viability check, 
+non-limiting reactant check), for comparison with the edited version.
+Optimized for parallel processing.
+'''
+
 
 def compute_crossfeeding_yield_alt(crossPair):
     result = splitByDemand_crossfeeding_alt(

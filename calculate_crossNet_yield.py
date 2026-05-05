@@ -13,12 +13,27 @@ def splitByDemand_crossfeeding(stoich_matrix, rxnMat, prodMat, sumRxnVec,
                                   rho, pi, nutrientSet, Energy, Currency,
                                   Core, crossPair):
     '''
-    Takes one cross-feeding pair and calculates individual energy and biomass
-    yields by solving both networks together in two coupled compartments.
+    Calculates individual energy and biomass yields for a cross-feeding pair
+    by solving both metabolic networks simultaneously in two coupled compartments.
+    Builds a doubled metabolite space (2 x nMets indices: A in [0, nMets), B in
+    [nMets, 2 x nMets)) and adds two explicit exchange reactions that transfer
+    A_donated from compartment A to B and B_donated from B to A. Flux is then
+    allocated round-by-round using the same stoichiometric demand-splitting
+    approach as splitByDemand: metabolite supply is split proportional to
+    stoichiometric demand across all consuming reactions, regardless of whether
+    they are currently available to fire. Each round, all reactions whose
+    allocated reactant shares are sufficient execute; currency metabolites are
+    treated as unlimited.
 
-    Compartments are linked only by the designated exchanged metabolites:
-        A_donated: A --> B
-        B_donated: B --> A
+    crossPair is a dict with keys cross_A (reaction indices for organism A),
+    cross_B (reaction indices for organism B), A_donated (metabolite index
+    secreted by A), and B_donated (metabolite index secreted by B). Exchange
+    metabolites start at zero supply, so mutually deadlocked pairs (neither
+    organism can fire before receiving the partner's metabolite) will produce
+    no exchange flux and be returned as non-viable.
+
+    Returns a dict with keys E_A, B_A, viable_A, E_B, B_B, viable_B,
+    pair_viable, flux_A_to_B, flux_B_to_A. Yields are per unit primary nutrient.
     '''
     reqKeys = {'cross_A', 'cross_B', 'A_donated', 'B_donated'}
     missing = reqKeys.difference(crossPair.keys())

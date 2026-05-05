@@ -5,7 +5,10 @@ from scipy import sparse
 sparse_cache = {}
 
 def make_sparse(arr):
-    """Convert to CSR, caching by array id to avoid redundant conversions."""
+    '''
+    Convert a dense array to sparse format if not already sparse, with caching to
+    optimize repeated calls on the same arrays.
+    '''
     if sparse.issparse(arr):
         return arr
     key = id(arr)
@@ -16,20 +19,23 @@ def make_sparse(arr):
     return sp
 
 def markSatMetsRxns(rxnProc, rxnMat, prodMat, sumRxnVec, nutrientSet, Currency):
-    """
-    Takes in a bunch of reactions and using the KEGG provided chemistry, 
-    markes all reactions and metabolites in the list of reactions that are 
-    'satisfied', i.e. which can be reached via simply a seed set of the 
-    given nutrients and currency metabolites.
+    '''
+    Starting from a seed set of nutrients and currency metabolites, propagates
+    reachability forward through the candidate reactions in rxnProc. A reaction
+    becomes satisfied once ALL of its reactants are satisfied; a metabolite
+    becomes satisfied once ANY reaction that produces it is satisfied. The
+    procedure iterates until no new reactions or metabolites are marked.
 
-    Accepts both dense (ndarray) and sparse (csr_matrix) inputs for
-    rxnMat and prodMat.  Internally converts to sparse for speed.
+    Accepts both dense (ndarray) and sparse (csr_matrix) inputs for rxnMat and
+    prodMat; internally converts to sparse and compresses the metabolite space
+    to only columns involved in active reactions, which speeds up large networks.
 
-    RETURNS:
+    rxnProc is a binary vector of length nRxns indicating the candidate reactions
+    to consider (typically the full network or a pruned subset).
 
-        satMetVec, satRxnVec: the current sets of metabolites and reactions
-                          that are said to be satisfied.
-    """
+    Returns (satMetVec, satRxnVec), binary vectors of length nMets and nRxns
+    respectively marking all reachable metabolites and reactions.
+    '''
     n_rxns, n_mets = rxnMat.shape
 
     seeds = np.array(nutrientSet + Currency)

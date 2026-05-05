@@ -2,29 +2,27 @@ import numpy as np
 from satisfiability_check import markSatMetsRxns, make_sparse
 
 def giveRevScope(rxnMat, prodMat, sumRxnVec, nutrientSet, Currency, coreTBP):
-    """
-    Takes in the stoichiometric matrix along with a sum vector mentioning the 
-    number of reactants in each reaction in the matrix. Also takes
-    in a set of nutrients available in the medium and a set of currency
-    metabolites. Receives information about which core molecule must
-    be produced.
+    '''
+    Discovers the complete non-minimal set of reactions that could contribute 
+    to producing a target core metabolite from the given nutrient and currency 
+    seed set via reverse scope expansion. Starting from coreTBP, the algorithm
+    iteratively marks reactions that produce "frontier" metabolites and their
+    required reactants, expanding backward until the nutrient set fully
+    satisfies all marked reactions. Satisfiability is verified at each step
+    with markSatMetsRxns (forward scope) to ensure that only reactions genuinely 
+    reachable from the seeds are included.
 
-    By reverse scope-expansion, discovers a subgraph that uses only the 
-    nutrient set and currency metabolites to successfully generate the 
-    core molecule. Note that this subgraph is not minimal, and must be
-    pruned in order to remove side-reactions that are added but may, in
-    principle, not be used to make the final core molecule. This merely
-    returns the reverse-scope of the core molecule upto the nutrient set.
+    The returned subgraph is non-minimal; it includes all reactions in the
+    reverse scope, many of which may be redundant. It should be passed to
+    a pruning routine (randMinNetwork or similar) to obtain a minimal pathway.
 
-    RETURNS:
-    Returns the satisfied metabolites and reactions in the subgraph
-    (corresponding to a pathway.)
+    coreTBP may be a single metabolite index or an array of indices.
 
-    Returns empty vectors if no such wholly satisfied subgraph is found.
-
-    satMets, satRxns are sets of metabolites and reactions, with their custom IDs.
-    """
-    # print(f"Running reverse scope...", flush=True)
+    Returns (satMets, satRxns), binary vectors of length nMets and nRxns
+    marking the reachable metabolites and reactions in the reverse scope.
+    Raises ValueError if the target metabolite cannot be reached from the
+    nutrient set at all.
+    '''
 
     # Convert to sparse once if needed (cached for repeated calls).
     sp_rxnMat = make_sparse(rxnMat)
@@ -55,7 +53,6 @@ def giveRevScope(rxnMat, prodMat, sumRxnVec, nutrientSet, Currency, coreTBP):
 
         # If core has been reached, checking if everything is marked, then returning.
         if np.array_equal(satRxns, rxnProc):
-            # print('All reactions are satisfied.', flush=True)
             return satMets, satRxns
 
         # Calculating the new metabolites that need to be produced
@@ -64,7 +61,6 @@ def giveRevScope(rxnMat, prodMat, sumRxnVec, nutrientSet, Currency, coreTBP):
 
         # If the full reverse scope has been reached, stopping and returning the marked set.
         if set(np.nonzero(currScopeMets)[0]).issubset(set(np.nonzero(prevScopeMets)[0])):
-            # print(f'Reverse scope complete with {int(np.sum(satMets))} metabolites and {int(np.sum(satRxns))} reactions.', flush=True)
 
             # Verify all requested cores are satisfied.
             cores = np.atleast_1d(np.asarray(coreTBP)).ravel()

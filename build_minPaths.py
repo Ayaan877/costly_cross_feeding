@@ -6,10 +6,14 @@ from load_data import *
 from batch_pruning import randMinNetwork
 from directory_paths import resolve_paths_path
 
+'''
+Builder script for minimal core-producing pathways. Generates a specified number 
+of unique minimal pathways for a given target metabolite.
+'''
+
 if __name__ == "__main__":
     print(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
-    # Args supplied by PBS script (see run_mininal_pathways.pbs)
     # Usage: build_minPaths.py <target_name> <paths_subdir> <n_workers> <max_attempts> <plateau_window> <plateau_threshold>
     #
     #   target_name  : KEGG metabolite ID  e.g. C00022

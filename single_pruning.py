@@ -4,10 +4,15 @@ from prune_check import isCoreProduced
 
 def randMinNetwork(satRxnVec, rxnMat, prodMat, sumRxnVec,
                    coreTBP, nutrientSet, Currency, rng=None):
-    """
-    Takes in a set of satisfied reactions (belonging to a subgraph) and prunes
-    it down to a minimal subgraph by randomly removing singly removable reactions.
-    """
+    '''
+    Prunes a set of satisfied reactions down to a minimal subgraph by
+    repeatedly sweeping through all remaining reactions in a random order and
+    removing each one that does not disrupt production of any target core
+    metabolite. Sweeps continue until a full pass yields no removals, at which
+    point the network is minimal under single-reaction removal.
+
+    Returns a numpy array of reaction indices forming the minimal network.
+    '''
 
     if rng is None:
         rng = np.random.default_rng()

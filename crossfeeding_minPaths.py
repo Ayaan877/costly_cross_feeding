@@ -2,54 +2,7 @@ import numpy as np
 from reverse_scope import giveRevScope
 from batch_pruning import randMinNetwork
 from autonomy_check import verify_autonomy
-
-
-def pathway_produced(pathway, prodMat):
-    """Set of metabolite IDs produced by any reaction in `pathway`."""
-    pathway = np.asarray(pathway, dtype=int)
-    if len(pathway) == 0:
-        return set()
-    return set(np.nonzero(np.logical_or.reduce(prodMat[pathway]))[0])
-
-
-def get_pathway_byproducts(pathway, full_rxns, rxnMat, prodMat,
-                           Core, nutrientSet, Currency):
-    """
-    Metabolites produced by pathway in the context of full_rxns that are
-    not consumed by any reaction in full_rxns. Currency, Core, and nutrients
-    are excluded.
-    """
-    excluded = set(list(Core) + list(nutrientSet) + list(Currency))
-    produced = pathway_produced(pathway, prodMat)
-
-    full_rxns = np.asarray(full_rxns, dtype=int)
-    if len(full_rxns) > 0:
-        consumed = set(np.nonzero(np.logical_or.reduce(rxnMat[full_rxns]))[0])
-    else:
-        consumed = set()
-
-    return np.array(
-        sorted(m for m in produced if m not in consumed and m not in excluded),
-        dtype=int)
-
-
-def get_pathway_intermediates(pathway, other_rxns, rxnMat, prodMat,
-                              Core, nutrientSet, Currency):
-    """
-    Metabolites produced by pathway that are also produced by at least one
-    reaction in other_rxns. This enforces that the metabolite is not produced
-    exclusively by pathway - i.e. it persists in the network if pathway is
-    removed. Currency, Core, and nutrients are excluded.
-    """
-    excluded = set(list(Core) + list(nutrientSet) + list(Currency))
-    produced = pathway_produced(pathway, prodMat)
-
-    other_rxns = np.asarray(other_rxns, dtype=int)
-    produced_by_others = pathway_produced(other_rxns, prodMat) if len(other_rxns) > 0 else set()
-
-    return np.array(
-        sorted(m for m in produced if m in produced_by_others and m not in excluded),
-        dtype=int)
+from find_intermediates import get_byproducts
 
 
 def make_donor_pathway(donor_met, target_core, rxnMat, prodMat, sumRxnVec, Currency):
@@ -125,6 +78,7 @@ def build_crossfeeding_pair_from_paths(all_paths, rxnMat, prodMat, sumRxnVec,
     pathway being replaced.
     """
     Core = list(Core)
+    excluded = sorted(set(list(Core) + list(nutrientSet) + list(Currency)))
 
     for attempt in range(1, max_attempts + 1):
         print(f"\n[Attempt {attempt}/{max_attempts}]", flush=True)
@@ -145,14 +99,16 @@ def build_crossfeeding_pair_from_paths(all_paths, rxnMat, prodMat, sumRxnVec,
             int_A_origin_path = path_dict_A[core_B]
 
             if use_byproducts:
-                int_A_candidates = get_pathway_byproducts(
-                    int_A_origin_path, full_rxns_A,
-                    rxnMat, prodMat, Core, nutrientSet, Currency)
+                int_A_candidates = get_byproducts(
+                    int_A_origin_path, rxnMat, prodMat, sumRxnVec,
+                    nutrientSet, Currency, excluded,
+                    context_rxns=full_rxns_A)
             else:
                 other_rxns_A = union_paths(path_dict_A, Core, exclude_core=core_B)
-                int_A_candidates = get_pathway_intermediates(
-                    int_A_origin_path, other_rxns_A,
-                    rxnMat, prodMat, Core, nutrientSet, Currency)
+                int_A_candidates = get_byproducts(
+                    int_A_origin_path, rxnMat, prodMat, sumRxnVec,
+                    nutrientSet, Currency, excluded,
+                    context_rxns=full_rxns_A, other_rxns=other_rxns_A)
 
             if len(int_A_candidates) == 0:
                 continue
@@ -183,15 +139,17 @@ def build_crossfeeding_pair_from_paths(all_paths, rxnMat, prodMat, sumRxnVec,
         # --- Step 3: Find int_B from donor_pathway_AB and build donor_path_BA ---
         # Note: int_B is pulled from pathway_AB, not the entire cross_B
         if use_byproducts:
-            int_B_candidates = get_pathway_byproducts(
-                                            donor_pathway_AB, cross_B,
-                                            rxnMat, prodMat, Core, nutrientSet, Currency)
+            int_B_candidates = get_byproducts(
+                donor_pathway_AB, rxnMat, prodMat, sumRxnVec,
+                nutrientSet, Currency, excluded,
+                context_rxns=cross_B)
         else:
-            # Intermediates constraint: int_B must also be produced by at least one of B's 
-            # remaining 7 pathways (not exclusively from donor_pathway_AB).
-            int_B_candidates = get_pathway_intermediates(
-                                            donor_pathway_AB, B_remaining_rxns,
-                                            rxnMat, prodMat, Core, nutrientSet, Currency)
+            # Persistence constraint: int_B must also be reachable from B's remaining
+            # pathways (not exclusively from donor_pathway_AB).
+            int_B_candidates = get_byproducts(
+                donor_pathway_AB, rxnMat, prodMat, sumRxnVec,
+                nutrientSet, Currency, excluded,
+                context_rxns=cross_B, other_rxns=B_remaining_rxns)
 
         if len(int_B_candidates) == 0:
             print("  No int_B candidates from donor_pathway_AB.", flush=True)
@@ -262,6 +220,10 @@ def build_crossfeeding_pair_from_paths(all_paths, rxnMat, prodMat, sumRxnVec,
           flush=True)
     return None
 
+
+# ----------------------------------------------
+# Test Run
+# ----------------------------------------------
 
 if __name__ == "__main__":
     import time

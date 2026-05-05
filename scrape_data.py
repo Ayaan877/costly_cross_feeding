@@ -5,6 +5,12 @@ import time
 from tqdm import tqdm
 import pickle
 
+'''
+Scrape reaction and compound data from KEGG to build a global stoichiometric matrix.
+Uses KEGG REST API to fetch reactions from a specified module (map01100), parse equations, 
+and construct a matrix.
+'''
+
 #-------------------------------------------------------------------------
 # 1. Fetch reaction IDs from a KEGG pathway/module
 #-------------------------------------------------------------------------

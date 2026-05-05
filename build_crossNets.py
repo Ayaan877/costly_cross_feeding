@@ -4,13 +4,17 @@ import pickle
 from load_data import *
 from datetime import datetime
 from generate_crossNets import generate_crossNets
-from directory_paths import (parse_crossnet_spec,
-                              resolve_autonet_path, resolve_crossnet_path)
+from directory_paths import parse_crossnet_spec, resolve_autonet_path, resolve_crossnet_path
+
+'''
+Builder script for minimal cross-feeding networks from autonomous networks. 
+Generates a specified number of unique cross-feeding pairs from a given set of
+autonomous networks, exchanging either byproduct or intermediate metabolites.
+'''
 
 if __name__ == "__main__":
     print(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
-    # Args supplied by PBS script (see run_crossfeeding_networks.pbs)
     # Usage: build_crossNets.py <autonet_subdir> <autonet_file> <crossnet_subdir> <crossnet_file> <n_target> <n_workers>
     #
     #   autonet_subdir  : "autonets_{source}_av{av}"  e.g. "autonets_mp_av1"

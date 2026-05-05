@@ -3,9 +3,20 @@ from prune_check import isCoreProduced
 
 def randMinNetwork(satRxnVec, rxnMat, prodMat, sumRxnVec,
                    Core, nutrientSet, Currency, rng=None, init_frac=0.5):
-    """
-    Wrapper for batch-based pruning followed by single-reaction cleanup.
-    """
+    '''
+    Prunes a set of reactions to a minimal network using an adaptive
+    two-phase strategy. This hybrid approach is substantially faster than 
+    pure single-reaction sweeping on large initial networks.
+    
+    Batch phase: Iteratively attempts to remove random batches of reactions, 
+    accepting any removal that preserves production of all core metabolites.
+    Failed attempts adaptively shrink the batch fraction until batch <= 1. 
+    
+    Single phase: Once batch size reaches 1, reactions are randomly permuted 
+    and tested for individual removability until no more can be removed.
+    
+    Returns a numpy array of reaction indices for the minimal network.
+    '''
     # print(f"Batch pruning network...", flush=True)
     if rng is None:
         rng = np.random.default_rng()
@@ -67,14 +78,23 @@ def randMinNetwork(satRxnVec, rxnMat, prodMat, sumRxnVec,
 def alt_randMinNetwork(satRxnVec, rxnMat, prodMat, sumRxnVec,
                    protected_mets, nutrientSet, Currency, donated_met, 
                    rng=None, init_frac=0.5):
-    """
-    Wrapper for batch-based pruning followed by single-reaction cleanup,
-    while preserving dependence on donated_met.
+    '''
+    Variant of randMinNetwork that enforces obligate dependence on a donated
+    metabolite throughout pruning. Uses the same adaptive batch-then-single
+    strategy, but a reaction removal is accepted only when two conditions hold
+    simultaneously: 
+    (1) All protected metabolites are producible with the donated metabolite 
+    present in the nutrient set (viability),
+    (2) Not all protected metabolites are producible in the absence of the 
+    donated metabolite (dependency).
 
-    A removal is accepted only if:
-      1. All protected mets are still producible WITH donated_met (viability).
-      2. Not all protected mets are producible WITHOUT donated_met (dependency).
-    """
+    protected_mets lists the metabolite indices that must remain reachable
+    (typically all Core metabolites plus the organism's own secreted intermediate).
+    donated_met is the externally supplied metabolite that must be required 
+    for viability (typically the partner's secreted intermediate).
+
+    Returns a numpy array of reaction indices for the minimal, donor-dependent network.
+    '''
     print(f"Batch pruning network while preserving dependence on intermediate {donated_met}...", flush=True)
     if rng is None:
         rng = np.random.default_rng()

@@ -1,7 +1,5 @@
 """
-directory_paths.py
-==================
-Central path resolver for all data artefacts.
+Central path resolver for all data files.
 
 Naming convention
 -----------------
@@ -10,7 +8,7 @@ AutoNets   data/networks/autonets_{source}_av{av}/autonets_{P|NP}[_pv{pv}].pkl
 CrossNets  data/networks/crossnets_{source}_cv{cv}/crossnets_{byp|int}_{P|NP}.pkl
 Yields     data/yields/yields_{source}_{mode}/yields_{auto|cross}[_{byp|int}]_{P|NP}_{av|cv}{v}.pkl
 
-Subdirectory + file-detail strings
+Subdirectory + file strings
 ------------------------------------
 autonet_subdir  : "autonets_{source}_av{av}"     e.g. "autonets_mp_av2"
 autonet_file    : "{P|NP}_pv{pv}"  (mp)  or "P" (rs)
@@ -102,13 +100,18 @@ def resolve_yield_path(autonet_subdir, autonet_file, yield_mode,
     crossnet_subdir : "crossnets_{source}_cv{cv}"  (None → auto yield)
     crossnet_file   : "{byp|int}_{P|NP}"            (None → auto yield)
     """
-    source, av, pruning, _ = parse_autonet_spec(autonet_subdir, autonet_file)
-    subdir_name = f"yields_{source}_{yield_mode}"
     if crossnet_subdir is None:
+        source, av, pruning, _ = parse_autonet_spec(autonet_subdir, autonet_file)
+        subdir_name = f"yields_{source}_{yield_mode}"
         fname = f"yields_auto_{pruning}_av{av}.pkl"
     else:
-        _, cv, cross_type, cross_pruning = parse_crossnet_spec(
+        source_cross, cv, cross_type, cross_pruning = parse_crossnet_spec(
             crossnet_subdir, crossnet_file)
+        if autonet_subdir is not None:
+            source, _, _, _ = parse_autonet_spec(autonet_subdir, autonet_file)
+        else:
+            source = source_cross
+        subdir_name = f"yields_{source}_{yield_mode}"
         fname = f"yields_cross_{cross_type}_{cross_pruning}_cv{cv}.pkl"
     return YIELDS_DIR / subdir_name / fname
 

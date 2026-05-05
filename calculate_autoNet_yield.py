@@ -9,11 +9,13 @@ def isLimiting(tRct, tRxn, m, S, reactants):
 def giveLimitingCurrency(r, tRxn):
     return np.where(r[tRxn] == max(r[tRxn][np.where(r[tRxn] < 0.0)]))[0][0]
 
-def splitByDemand(stoich_matrix, rxnMat, prodMat, sumRxnVec, rho, pi, 
-                 nutrientSet, Energy, Currency, Core, orgRxns):
+def splitByDemand(stoich_matrix, rxnMat, prodMat, sumRxnVec, rho, pi,
+                 nutrientSet, Energy, Currency, Core, orgRxns, nutrientSupply=None):
     '''
-    Takes a set of reactions that form a complete network (orgRxns) and 
-    calculates the energy and biomass yields based on stoichiometric demand
+    Takes a set of reactions that form a complete network (orgRxns) and calculates the energy 
+    and biomass yields based on stoichiometric demand. Flux is allocated according to the limiting 
+    reactant for each reaction, and the total demand across all reactions, including downstream
+    demand. Flux accumulates across rounds to ensure mass conservation.
     '''
     # Initializing yield counters for E and B.
     runningE, runningB = 0.0, 0.0
@@ -27,6 +29,9 @@ def splitByDemand(stoich_matrix, rxnMat, prodMat, sumRxnVec, rho, pi,
     # Constructing a new metabolite state vector.
     metState = np.zeros(nMets)
     metState[ Currency + nutrientSet ] = 1
+    if nutrientSupply:
+        for met, supply in nutrientSupply.items():
+            metState[met] = supply
 
     # Getting compact copies of the relevant matrices (active reactions only).
     r = np.copy(rho[activeRxns])
@@ -116,7 +121,8 @@ def splitByDemand(stoich_matrix, rxnMat, prodMat, sumRxnVec, rho, pi,
         # Maintaining nutrient shares across rounds using initial total demand.
         for met in nutrientSet:
             if totalInitialDemand[met] > 0:
-                shareMatrix[:, met] = r[:, met] / totalInitialDemand[met]
+                supply = nutrientSupply.get(met, 1.0) if nutrientSupply else 1.0
+                shareMatrix[:, met] = supply * r[:, met] / totalInitialDemand[met]
 
         # Recalculating performable reactions.
         procRxnVec = ((np.dot(rMat, np.sum(shareMatrix, axis = 0) != 0) - sumRxnVecActive) == 0) * 1

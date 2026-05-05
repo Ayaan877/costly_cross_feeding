@@ -13,7 +13,10 @@ def init_worker(data):
     worker_data = data
 
 def prune_worker(seed):
-    """Multiprocessing worker: prune the shared reverse-scope network."""
+    '''
+    Multiprocessing worker that generates an autonomous network by 
+    pruning the reverse scope with a given seed.
+    '''
     d = worker_data
     rng = np.random.default_rng(seed)
     return randMinNetwork(d['satRxns'], d['rxnMat'], d['prodMat'], d['sumRxnVec'],
@@ -23,10 +26,10 @@ def generate_revScopeAutoNets(rxnMat, prodMat, sumRxnVec, nutrientSet,
                               Currency, coreTBPs, n_target=50000,
                               n_workers=32, batch_size=None,
                               save_path=None, save_interval=1000):
-    """
+    '''
     Generate `n_target` unique minimal autonomous networks by repeatedly
     batch-pruning the same reverse-scope subgraph with different seeds.
-    """
+    '''
     if batch_size is None:
         batch_size = n_workers
 
@@ -70,18 +73,4 @@ def generate_revScopeAutoNets(rxnMat, prodMat, sumRxnVec, nutrientSet,
             pickle.dump(networks, f)
         print(f"Saved to {save_path}")
     return networks
-
-
-if __name__ == "__main__":
-    import sys
-    from load_data import *
-
-    n_workers = int(sys.argv[1]) if len(sys.argv) > 1 else 32
-
-    networks = generate_revScopeAutoNets(
-        rxnMat, prodMat, sumRxnVec, nutrientSet, Currency, Core,
-        n_target=50000, n_workers=n_workers,
-        save_path="revScope_autonets.pkl")
-
-    print(f"Final: {len(networks)} unique autonets")
 

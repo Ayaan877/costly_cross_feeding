@@ -8,6 +8,12 @@ import pickle
 import os
 from directory_paths import resolve_autonet_path, resolve_yield_path
 
+'''
+Calculates energy and biomass yields for a set of autonomous networks using 
+the updated splitByDemand method (downstream/iterative flux allocation, 
+true viability check, limiting reactant check). Optimized for parallel processing.
+'''
+
 def compute_yield_sbd(net):
     return splitByDemand(
         stoich_matrix, rxnMat, prodMat,

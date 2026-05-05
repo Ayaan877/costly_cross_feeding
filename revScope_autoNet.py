@@ -3,15 +3,26 @@ from batch_pruning import randMinNetwork
 
 def revScopeAutoNet(rxnMat, prodMat, sumRxnVec,
                             nutrientSet, Currency, coreTBPs):
-    """
-    Return one minimal autonomous network (numpy array of reaction indices).
-    """
+    '''
+    Generates a minimal autonomous network that produces all target core
+    metabolites from the nutrient and currency seed set. Runs reverse scope
+    expansion simultaneously over all coreTBPs to obtain the initial non-minimal
+    subgraph, then applies batch pruning to reduce it to a minimal network.
+    
+    coreTBPs is a list of metabolite indices for all core biomass precursors.
+
+    Returns a numpy array of reaction indices for the minimal autonomous network.
+    '''
 
     satMets, satRxns = giveRevScope(rxnMat, prodMat, sumRxnVec,
                                     nutrientSet, Currency, coreTBPs)
     return randMinNetwork(satRxns, rxnMat, prodMat, sumRxnVec,
                           coreTBPs, nutrientSet, Currency)
 
+
+# ---------------------------------------------------------------
+# Test Run
+# ---------------------------------------------------------------
 
 if __name__ == "__main__":
     from load_data import *

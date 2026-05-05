@@ -8,10 +8,18 @@ from autonomy_check import verify_autonomy
 
 def remove_core_production(net, removed_core, rxnMat, prodMat, sumRxnVec,
                            nutrientSet, Currency, Core, intermediates):
-    """
-    Remove a network's ability to produce a specific core metabolite.
-    Preserves the production of the other 7 cores and the exchanged metabolites.
-    """
+    '''
+    Prunes a network until it can no longer produce removed_core from base
+    nutrients, while keeping all other 7 core metabolites and any specified
+    intermediates reachable. Reactions are tested in random order and removed
+    greedily whenever the protected set (remaining cores + intermediates) stays
+    satisfiable. This creates the "hole" in the network that must be filled by
+    a cross-feeding partner.
+
+    Returns the pruned reaction array if removed_core is successfully eliminated,
+    or None if no pruning could sever its production without disrupting other
+    protected metabolites.
+    '''
 
     remaining_cores = [c for c in Core if c != removed_core]
     protected = list(remaining_cores)
@@ -43,11 +51,17 @@ def remove_core_production(net, removed_core, rxnMat, prodMat, sumRxnVec,
 
 
 def make_donor_pathway(intermediate, core_target, rxnMat, prodMat, sumRxnVec, Currency):
-    """
-    Construct a minimal pathway from an intermediate metabolite to a
-    precursor molecule using ONLY the intermediate (plus currency) as
-    the nutrient source.
-    """
+    '''
+    Constructs a minimal pathway that converts a secreted intermediate into
+    a target core metabolite, using only the intermediate itself (plus currency
+    metabolites) as the nutrient source. Runs reverse scope expansion from
+    core_target with the intermediate as the sole nutrient, then prunes to
+    a minimal pathway. An additional check confirms the intermediate is actually
+    consumed by at least one reaction in the returned pathway.
+
+    Returns a numpy array of reaction indices for the minimal donor pathway,
+    or None if no path exists from the intermediate to the core target.
+    '''
 
     try:
         satMets, satRxns = giveRevScope(rxnMat, prodMat, sumRxnVec,
@@ -99,10 +113,18 @@ def find_removable_core(net, rxnMat, prodMat, sumRxnVec,
 def build_pathway_pair(net_A, net_B, candidates_A, candidates_B,
                            rxnMat, prodMat, sumRxnVec, nutrientSet, Currency,
                            Core, max_attempts):
-    """
-    Search for a valid cross-feeding pairs by sampling random intermediate/core
-    combinations and checking for viable donor-recipient pairs.
-    """
+    '''
+    Searches for a valid cross-feeding pair by repeatedly sampling random
+    combinations of candidate intermediates from each network and testing
+    feasibility. For each combination, attempts to (1) prune a core metabolite
+    from each network without disrupting the chosen intermediate, and (2) build
+    a minimal donor pathway from each intermediate to the opposing network's
+    missing core. Skips previously attempted intermediate combinations.
+
+    Returns a dict with keys pruned_A, pruned_B, pathway_AB, pathway_BA,
+    intermediate_A, intermediate_B, core_A, core_B on success, or None if
+    no valid combination is found within max_attempts.
+    '''
     attempted = set()
     for attempt in range(1, max_attempts + 1):
         print(f"[Attempt {attempt}/{max_attempts}]", flush=True)
@@ -165,11 +187,18 @@ def build_pathway_pair(net_A, net_B, candidates_A, candidates_B,
 
 def augment_network(pruned_receiver, donor_pathway, donated_met, rxnMat, prodMat, sumRxnVec, 
                     nutrientSet, Currency, Core, intermediates):
-    """
-    Add the donor pathway to the pruned network, treating the donated metabolite 
-    as an additional nutrient. Prune until the network is viable, minimal,
-    and dependent on the donated metabolite. 
-    """
+    '''
+    Merges a pruned receiver network with a donor pathway, then applies
+    alt_randMinNetwork to produce a minimal augmented network that is both
+    viable (all core metabolites reachable with donated_met) and obligately
+    dependent (not all cores reachable without donated_met). The donated
+    metabolite is treated as an additional nutrient only during viability
+    checks, not as a base-nutrient supply.
+
+    Returns the pruned augmented reaction array, or None if the batch pruning
+    could not reduce the merged network below its initial size (indicating that
+    no donor-dependent minimal form exists under the given constraints).
+    '''
     combined = np.union1d(pruned_receiver, donor_pathway).astype(int)
 
     print(f"Augmented receiver size: {len(combined)}", flush=True)
@@ -198,16 +227,26 @@ def augment_network(pruned_receiver, donor_pathway, donated_met, rxnMat, prodMat
 def build_crossfeeding_pair(net_A, net_B, rxnMat, prodMat, sumRxnVec,
                              nutrientSet, Currency, Core,
                              use_byproducts, max_attempts, max_runs):
-    """
-    Constructs an obligate cross-feeding pair from two autonomous networks.
+    '''
+    Full pipeline for constructing an obligate cross-feeding pair from two
+    autonomous networks. Proceeds in four steps: 
+    
+    (1) Identify candidate secretable intermediates in each network; 
+    (2) Search for a valid intermediate/core combination that allows 
+    pruning a core from each network and building a donor pathway to 
+    it from the partner's intermediate; 
+    (3) Augment each pruned receiver with the partner's donor pathway 
+    and prune till donor-dependent; 
+    (4) Verify that each final network is viable with the donated metabolite 
+    but not without it (obligate mutual dependence). If any step fails the procedure 
+    retries from step 2 up to max_runs times.
 
-    1. Determines candidate intermediates for each network.
-    2. Randomly samples intermediate/core pairs, builds valid donor pathways 
-    and removes the production of the core from the respective receiver networks.
-    3. Inserts the donor pathways into the pruned receivers and prunes them until they 
-    are viable and dependent on the donated intermediate.
-    4. Final verification of obligate dependence.
-    """
+    use_byproducts controls whether candidates are drawn from strict byproducts
+    (True) or all non-excluded intermediates (False).
+
+    Returns a dict with keys cross_A, cross_B, A_donated, B_donated suitable
+    for passing directly to splitByDemand_crossfeeding, or None on failure.
+    '''
     print(f'Network A: {len(net_A)} reactions | Network B: {len(net_B)} reactions', flush=True)
 
     # Step 1: Identify candidate intermediates from both autonomous networks
@@ -327,6 +366,11 @@ def build_crossfeeding_pair(net_A, net_B, rxnMat, prodMat, sumRxnVec,
             'pathway_AB': pathway_AB,
             'pathway_BA': pathway_BA,
         }
+
+
+# ---------------------------------------------------------------------------
+# Test Run
+# ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
     import pickle

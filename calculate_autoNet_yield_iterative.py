@@ -11,7 +11,7 @@ def findLimRct(j, reactants, shareMatrix, S):
 
 def splitByDemandIterative(stoich_matrix, rxnMat, prodMat, sumRxnVec, rho, pi,
                            nutrientSet, Energy, Currency, Core, orgRxns,
-                           max_iter=5000, tol=1e-9, tol_loose=1e-4):
+                           max_iter=5000, tol=1e-9, tol_loose=1e-4, nutrientSupply=None):
     '''
     Computes the steady-state biomass and energy yield per nutrient molecule.
 
@@ -99,6 +99,9 @@ def splitByDemandIterative(stoich_matrix, rxnMat, prodMat, sumRxnVec, rho, pi,
         # nutrient recycling is fully reflected in the steady-state flux.
         phi_new = np.zeros(nMets)
         phi_new[nutrientSet] = 1.0          # external supply term
+        if nutrientSupply:
+            for met, supply in nutrientSupply.items():
+                phi_new[met] = supply
 
         for j in range(nActive):
             rs = np.where(rMat[j])[0]

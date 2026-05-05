@@ -1,16 +1,20 @@
 import sys
 import time
-import pickle
 from load_data import *
 from datetime import datetime
 from load_networks import load_minpaths
 from generate_crossNets_minPaths import generate_crossNets_minPaths
 from directory_paths import parse_crossnet_spec, resolve_crossnet_path
 
+'''
+Builder script for non-minimal cross-feeding networks from minimal core pathways.
+Generates a specified number of unique cross-feeding pairs from a given set of
+core minimal pathways, exchanging either byproduct or intermediate metabolites.
+'''
+
 if __name__ == "__main__":
     print(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
-    # Args supplied by PBS script (see run_crossfeeding_networks.pbs)
     # Usage: build_crossNets_minPaths.py <paths_subdir> <crossnet_subdir> <crossnet_file> <n_target> <n_workers>
     #
     #   paths_subdir    : "paths_pv{pv}"               e.g. "paths_pv2"

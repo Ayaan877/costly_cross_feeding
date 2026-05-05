@@ -27,6 +27,8 @@ Returns:
     prodMat: binary product matrix (1 if metabolite is a product, else 0)
     sumRxnVec: vector of counts of reactants per reaction
     sumProdVec: vector of counts of products per reaction
+
+    removes degenerate reactions (no reactants or only currency reactants) from all matrices
 '''
 
 # Load stoichiometric matrix

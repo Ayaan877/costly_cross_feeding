@@ -14,7 +14,9 @@ def init_worker(data):
     worker_data = data
 
 def crossfeed_worker(args):
-    """Multiprocessing worker: attempt to build a cross-feeding pair."""
+    '''
+    Worker function to generate a cross-feeding pair from random minimal autonomous networks.
+    '''
     i_A, i_B, seed = args
     d = worker_data
     np.random.seed(seed)
@@ -46,7 +48,9 @@ def crossfeed_worker(args):
 
 
 def pair_key(result):
-    """Canonical unordered key for deduplication by network content."""
+    '''
+    Canonical unordered key for deduplication by network content.
+    '''
     return tuple(sorted([tuple(sorted(result['cross_A'])), tuple(sorted(result['cross_B']))]))
 
 
@@ -55,11 +59,13 @@ def generate_crossNets(autonets, rxnMat, prodMat, sumRxnVec,
                                 n_target, n_workers,
                                 batch_size=None, save_path=None,
                                 save_interval=1000, use_byproducts=False):
-    """
-    Generate up to `n_target` unique cross-feeding pairs from an ensemble
-    of autonomous networks by randomly sampling network pairs and calling
-    build_crossfeeding_pair in parallel.
-    """
+    '''
+    Generate up to `n_target` unique cross-feeding pairs from the library 
+    of minimal autonomous networks, using `n_workers` parallel processes.
+
+    Each worker independently samples two random autonomous networks 
+    and attempts to construct a minimal cross-feeding pair.
+    '''
     if batch_size is None:
         batch_size = n_workers
 

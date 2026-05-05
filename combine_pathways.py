@@ -2,15 +2,21 @@ import numpy as np
 from prune_check import isCoreProduced
 
 def buildAutonomousNetwork(pathway_list, rxnMat, prodMat, sumRxnVec, 
-                           nutrientSet, Currency, coreTBPs, prune, rng=None, verbose=False):
-    """
-    pathway_list : list of 8 pathways (each pathway = list of reaction indices)
-    coreTBPs     : array of 8 target metabolite indices
+                           nutrientSet, Currency, coreTBPs, prune, rng=None):
+    '''
+    Constructs an autonomous network capable of producing all 8 core biomass
+    precursors by taking the union of 8 individual minimal pathways (one per
+    core target). If prune=True, the merged union is further reduced by a
+    single-reaction sweep that removes any reaction whose deletion does not
+    prevent production of any core metabolite, producing a minimal autonomous
+    network. If prune=False, the raw union is returned.
 
-    Returns:
-        minimal reaction index array that produces all 8 targets
-        from nutrientSet + Currency and is minimal under reachability.
-    """
+    pathway_list is a list of 8 arrays of reaction indices, one pathway per
+    core target in coreTBPs. coreTBPs is an array of 8 metabolite indices.
+
+    Returns a numpy array of reaction indices for the (optionally minimal)
+    autonomous network.
+    '''
 
     if rng is None:
         rng = np.random.default_rng()
@@ -21,9 +27,6 @@ def buildAutonomousNetwork(pathway_list, rxnMat, prodMat, sumRxnVec,
         combined_rxns.update(pathway)
 
     combined_rxns = np.array(list(combined_rxns), dtype=int)
-
-    if verbose:
-        print(f"Combined network size before pruning: {len(combined_rxns)} reactions")
 
     satRxnVec = np.zeros(rxnMat.shape[0], dtype=int)
     satRxnVec[combined_rxns] = 1
@@ -42,9 +45,6 @@ def buildAutonomousNetwork(pathway_list, rxnMat, prodMat, sumRxnVec,
                     removed_any = True
 
             if not removed_any:
-                if verbose:
-                    print("No more removable reactions → terminating.")
-                    print(f'Final network size = {len(currSatRxns)}')
                 break
 
         return np.nonzero(currSatRxnVec)[0]

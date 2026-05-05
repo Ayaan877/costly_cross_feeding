@@ -4,6 +4,12 @@ from datetime import datetime
 from load_data import *
 from directory_paths import parse_autonet_spec, resolve_autonet_path
 
+'''
+Builder script for autonomous networks. Generates a specified number of unique
+autonomous networks using the revScope or minPath generation method, 
+with optional post-assembly pruning.
+'''
+
 if __name__ == "__main__":
     print(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 

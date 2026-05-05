@@ -15,7 +15,9 @@ def init_worker(data):
 
 
 def crossfeed_worker(seed):
-    """Multiprocessing worker: attempt to build a cross-feeding pair from MinPaths."""
+    '''
+    Worker function to generate a cross-feeding pair from random minimal core-producing pathways.
+    '''
     d = worker_data
     np.random.seed(seed)
 
@@ -34,7 +36,9 @@ def crossfeed_worker(seed):
 
 
 def pair_key(result):
-    """Canonical unordered key for deduplication by network content."""
+    '''
+    Canonical unordered key for deduplication by network content.
+    '''
     return tuple(sorted([tuple(sorted(result['cross_A'])), tuple(sorted(result['cross_B']))]))
 
 
@@ -44,13 +48,14 @@ def generate_crossNets_minPaths(all_paths, rxnMat, prodMat, sumRxnVec,
                                 batch_size=None, save_path=None,
                                 save_interval=1000, use_byproducts=False,
                                 max_attempts=10):
-    """
-    Generate up to `n_target` unique cross-feeding pairs from a MinPaths library
-    by calling build_crossfeeding_pair_from_paths in parallel.
+    '''
+    Generate up to `n_target` unique cross-feeding pairs from the library 
+    of minimal core-producing pathways, using `n_workers` parallel processes.
 
-    Each worker independently samples two random autonomous networks from the
-    MinPaths library and attempts to construct a cross-feeding pair.
-    """
+    Each worker independently assembles two random autonomous networks by
+    sampling one minimal pathway per core from the MinPaths library (8 pathways
+    per organism) and attempts to construct a cross-feeding pair.
+    '''
     if batch_size is None:
         batch_size = n_workers
 

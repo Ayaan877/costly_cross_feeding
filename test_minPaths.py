@@ -1,6 +1,5 @@
 '''
-REVERSE SCOPE AND PRUNING TEST
-Returns: Minimal pathways for a given precursor
+Builds a test minimal core-producing network for a single target
 '''
 from reverse_scope import giveRevScope
 from batch_pruning import randMinNetwork  

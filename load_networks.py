@@ -1,7 +1,10 @@
 import pickle
 import numpy as np
-from directory_paths import (resolve_paths_path, resolve_autonet_path,
-                              resolve_crossnet_path, resolve_yield_path)
+from directory_paths import *
+
+'''
+Load data for pre-generated pathways, networks and yields
+'''
 
 CORE_METS = [
     "C00009", "C00013", "C00022", "C00025",
@@ -96,3 +99,25 @@ def load_yields(autonet_subdir, autonet_file, yield_mode,
                 np.concatenate([EA, EB]),
                 np.concatenate([BA, BB]),
                 via, nets)
+
+
+def load_merged_yields(crossnet_subdir, crossnet_file, yield_mode):
+    """
+    Load merged (union) network sizes and their yield data.
+
+    crossnet_subdir : "crossnets_{source}_cv{cv}"
+    crossnet_file   : "{byp|int}_{P|NP}"
+    yield_mode      : "sbd" | "iter"
+
+    Returns (net_sizes, E_yields, B_yields, via, nets).
+    """
+    net_path   = resolve_crossnet_path(crossnet_subdir, crossnet_file)
+    yield_path = resolve_merged_yield_path(crossnet_subdir, crossnet_file, yield_mode)
+    with open(net_path, "rb") as f:
+        nets = pickle.load(f)
+    with open(yield_path, "rb") as f:
+        E_yields, B_yields, via = pickle.load(f)
+    sizes = np.array([len(set(p['cross_A']) | set(p['cross_B'])) for p in nets])
+    net_sizes = sizes[via]
+    print(f"Loaded merged yields from {yield_path}")
+    return net_sizes, E_yields[via], B_yields[via], via, nets

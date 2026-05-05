@@ -1,10 +1,7 @@
 """
-get_stoich_yields.py
-
 Computes stoichiometric biomass (biomassCost) and energy (fitCost) yields for
 autonomous networks and cross-feeding pairs using the raw stoichiometric
-approach from fit_cost.py, adapted to use the repo's standard nutrientSet
-(kegg_nutrients.txt) in place of the external preb_medium.txt.
+approach from fit_cost.py.
 
 Biomass yield (biomassCost)
 ---------------------------
